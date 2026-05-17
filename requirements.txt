@@ -1,0 +1,3 @@
+# LLAMA-AGENT Bağımlılıkları
+requests>=2.31.0
+playwright>=1.40.0   # Opsiyonel: web aracı için
