@@ -192,6 +192,13 @@ Examples:
   python main.py --session abc123           # resume session
   python main.py -t "task" --json           # JSON output (automation)
   python main.py --model llama3.2:3b        # use specific model
+
+
+  Helpers for ollama, export from bash:
+
+  export OLLAMA_KEEP_ALIVE=-1
+  export OLLAMA_NUM_PARALLEL=1
+  export OLLAMA_MAX_LOADED_MODELS=1
         """
     )
     parser.add_argument("-t", "--task",   help="Run a single task and exit")

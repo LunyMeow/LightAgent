@@ -4,143 +4,85 @@ LLAMA-AGENT :: Merkezi Konfigürasyon
 import os
 
 class Config:
-    # --- Provider Seçimi ---
+    # --- Provider ---
     PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
-    # seçenekler: "ollama" | "deepseek"
 
-    # --- Model Ayarları ---
+    # --- Model ---
     MODEL = os.getenv("AGENT_MODEL", "qwen2.5-coder:7b")
 
     # --- Ollama ---
     OLLAMA_BASE_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
     # --- DeepSeek ---
-    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY","test")
-    DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+    DEEPSEEK_API_KEY   = os.getenv("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_BASE_URL  = "https://api.deepseek.com"
+    DEEPSEEK_MODELS    = {"flash": "deepseek-v4-flash", "pro": "deepseek-v4-pro"}
+    DEEPSEEK_THINKING          = True
+    DEEPSEEK_REASONING_EFFORT  = "high"  # low | medium | high
 
-    DEEPSEEK_MODELS = {
-        "flash": "deepseek-v4-flash",
-        "pro": "deepseek-v4-pro"
-    }
-
-    # aktif model (DeepSeek için override)
     if PROVIDER == "deepseek":
         MODEL = os.getenv("DEEPSEEK_MODEL", DEEPSEEK_MODELS["pro"])
 
-    # --- DeepSeek özel parametreleri ---
-    DEEPSEEK_THINKING = True
-    DEEPSEEK_REASONING_EFFORT = "high"  # low | medium | high
-
     # --- Dizinler ---
-    BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
-    WORKSPACE_DIR  = os.path.join(BASE_DIR, "workspace")
-    MEMORY_DIR     = os.path.join(BASE_DIR, "memory")
-    LOG_DIR        = os.path.join(BASE_DIR, "logs")
+    BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+    WORKSPACE_DIR = os.path.join(BASE_DIR, "workspace")
+    MEMORY_DIR    = os.path.join(BASE_DIR, "memory")
+    LOG_DIR       = os.path.join(BASE_DIR, "logs")
 
     # --- Ajan Davranışı ---
     MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", 20))
     TEMPERATURE    = float(os.getenv("TEMPERATURE", 0.1))
     CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW", 8192))
 
+    # --- Shell timeout ---
+    DEFAULT_SHELL_TIMEOUT = int(os.getenv("DEFAULT_SHELL_TIMEOUT", 60))
+    MAX_SHELL_TIMEOUT     = int(os.getenv("MAX_SHELL_TIMEOUT", 300))
+
+    # ──────────────────────────────────────────────────────────────
+    # İZİN POLİTİKALARI
+    # Her ayar için 3 seçenek:
+    #   "always"  → her zaman izin ver  (sormadan geç)
+    #   "ask"     → her seferinde kullanıcıya sor
+    #   "never"   → her zaman reddet   (sormadan engelle)
+    # ──────────────────────────────────────────────────────────────
+
+    # Workspace dışı YOL erişimi politikası
+    # (model /tmp/, ~/Desktop/ gibi yerlere dosya yazmak istediğinde)
+    PATH_PERMISSION_POLICY = os.getenv("PATH_PERMISSION_POLICY", "ask")
+    # "always" → workspace dışına her zaman yaz
+    # "ask"    → her seferinde kullanıcıya sor   ← varsayılan
+    # "never"  → workspace dışına hiç yazma
+
+    # İzin listesi dışındaki KOMUT çalıştırma politikası
+    # (allowlist'te olmayan komutlar için)
+    COMMAND_PERMISSION_POLICY = os.getenv("COMMAND_PERMISSION_POLICY", "ask")
+    # "always" → izin listesi dışı komutları her zaman çalıştır
+    # "ask"    → her seferinde kullanıcıya sor   ← varsayılan
+    # "never"  → izin listesi dışı komutları hiç çalıştırma
+
+    # Geçerli politika değerleri
+    VALID_POLICIES = ("always", "ask", "never")
+
+    # ──────────────────────────────────────────────────────────────
+
     # --- İzin Verilen Shell Komutları ---
     ALLOWED_COMMANDS = [
-        # File system / shell
-        "ls", "pwd", "mkdir", "rmdir", "touch", "cat", "head", "tail",
-        "grep", "find", "locate", "wc", "sort", "uniq",
-        "echo", "printf", "cp", "mv", "rm",
-        "chmod", "chown", "ln", "stat", "file",
-        "tar", "zip", "unzip", "gzip", "xz",
-
-        # Text processing
-        "sed", "awk", "cut", "tr", "jq", "yq",
-
-        # Python / scripting
-        "python", "python2", "python3", "python3.10",
-        "pip", "pip3", "virtualenv",
-        "bash", "sh", "zsh",
-
-        # Package managers
-        "apt", "apt-get", "yum", "dnf",
-        "pacman", "brew",
-        "npm", "yarn", "pnpm",
-        "composer",
-
-        # Git / version control
-        "git",
-        "git status",
-        "git log",
-        "git diff",
-        "git branch",
-        "git checkout",
-        "git pull",
-        "git clone",
-
-        # Networking
+        "ls", "pwd", "mkdir", "touch", "cat", "head", "tail",
+        "grep", "find", "wc", "echo", "cp", "mv",
+        "python3", "pip", "pip3", "bash", "sh", "chmod",
         "curl", "wget",
-        "ping", "nslookup", "dig",
-        "netstat", "ss",
-        "ifconfig", "ip",
-        "traceroute",
-        "nmap",
-        "tcpdump",
-
-        # Process / monitoring
-        "ps", "top", "htop",
-        "kill", "pkill",
-        "df", "du", "free",
-        "uptime", "whoami",
-        "env", "which",
-
-        # Docker / containers
-        "docker",
-        "docker-compose",
-        "docker ps",
-        "docker images",
-        "docker logs",
-        "docker exec",
-        "kubectl",
-
-        # Node.js ecosystem
-        "node", "npx", "pm2",
-
-        # Build tools
-        "make", "cmake",
-        "gcc", "g++",
-        "go", "cargo", "rustc",
-        "java", "javac",
-
-        # Databases
-        "sqlite3",
-        "mysql",
-        "psql",
-        "redis-cli",
-        "mongosh",
-
-        # Mobile / embedded
-        "adb",
-        "fastboot",
-
-        # Security / debugging
-        "strace", "ltrace",
-        "gdb",
-        "openssl",
-
-        # CI/CD
-        "gh",          # GitHub CLI
-        "gitlab-runner",
-
-        # Misc
-        "history",
-        "clear",
-        "time",
-        "watch"
+        "git", "git status", "git log",
+        "npm", "node",
+        "docker", "docker-compose",
+        "ping", "nslookup",
+        "ps", "df", "du", "free", "which", "nmap", "adb",
     ]
 
-    # --- Güvenlik: Yasaklı Desenler ---
+    # --- Güvenlik: Yasaklı Desenler (bunlar hiçbir politika ile geçilemez) ---
     FORBIDDEN_PATTERNS = [
         r"rm\s+-rf",
         r"rm\s+-r\s+/",
-        r":(){:|:&};:",      # fork bomb
+        r":(){:|:&};:",
         r"/etc/shadow",
         r"/etc/passwd",
         r"sudo\s",
@@ -151,9 +93,11 @@ class Config:
         r"shutdown",
         r"reboot",
         r"halt",
+        r"curl.*\|\s*bash",
+        r"wget.*\|\s*sh",
     ]
 
-    # --- Runtime helper ---
+    # --- Runtime helpers ---
     @classmethod
     def is_deepseek(cls):
         return cls.PROVIDER == "deepseek"
@@ -167,10 +111,19 @@ class Config:
             "max_tokens": cls.CONTEXT_WINDOW,
             "thinking": {"type": "enabled"} if cls.DEEPSEEK_THINKING else None,
             "reasoning_effort": cls.DEEPSEEK_REASONING_EFFORT,
-            "stream": False
+            "stream": False,
         }
 
-    # --- Otomatik dizin oluşturma ---
+    @classmethod
+    def get_path_policy(cls) -> str:
+        p = cls.PATH_PERMISSION_POLICY.lower()
+        return p if p in cls.VALID_POLICIES else "ask"
+
+    @classmethod
+    def get_command_policy(cls) -> str:
+        p = cls.COMMAND_PERMISSION_POLICY.lower()
+        return p if p in cls.VALID_POLICIES else "ask"
+
     @classmethod
     def ensure_dirs(cls):
         for d in [cls.WORKSPACE_DIR, cls.MEMORY_DIR, cls.LOG_DIR]:
